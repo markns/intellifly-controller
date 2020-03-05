@@ -49,7 +49,7 @@ type fixture struct {
 	client     *fake.Clientset
 	kubeclient *k8sfake.Clientset
 	// Objects to put in the store.
-	fooLister        []*samplecontroller.Foo
+	functionLister   []*samplecontroller.Function
 	deploymentLister []*apps.Deployment
 	// Actions expected to happen on the client.
 	kubeactions []core.Action
@@ -67,14 +67,14 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-func newFoo(name string, replicas *int32) *samplecontroller.Foo {
-	return &samplecontroller.Foo{
+func newFunction(name string, replicas *int32) *samplecontroller.Function {
+	return &samplecontroller.Function{
 		TypeMeta: metav1.TypeMeta{APIVersion: samplecontroller.SchemeGroupVersion.String()},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: metav1.NamespaceDefault,
 		},
-		Spec: samplecontroller.FooSpec{
+		Spec: samplecontroller.FunctionSpec{
 			DeploymentName: fmt.Sprintf("%s-deployment", name),
 			Replicas:       replicas,
 		},
@@ -89,14 +89,14 @@ func (f *fixture) newController() (*Controller, informers.SharedInformerFactory,
 	k8sI := kubeinformers.NewSharedInformerFactory(f.kubeclient, noResyncPeriodFunc())
 
 	c := NewController(f.kubeclient, f.client,
-		k8sI.Apps().V1().Deployments(), i.Samplecontroller().V1alpha1().Foos())
+		k8sI.Apps().V1().Deployments(), i.Samplecontroller().V1alpha1().Functions())
 
-	c.foosSynced = alwaysReady
+	c.functionsSynced = alwaysReady
 	c.deploymentsSynced = alwaysReady
 	c.recorder = &record.FakeRecorder{}
 
-	for _, f := range f.fooLister {
-		i.Samplecontroller().V1alpha1().Foos().Informer().GetIndexer().Add(f)
+	for _, f := range f.functionLister {
+		i.Samplecontroller().V1alpha1().Functions().Informer().GetIndexer().Add(f)
 	}
 
 	for _, d := range f.deploymentLister {
@@ -106,15 +106,15 @@ func (f *fixture) newController() (*Controller, informers.SharedInformerFactory,
 	return c, i, k8sI
 }
 
-func (f *fixture) run(fooName string) {
-	f.runController(fooName, true, false)
+func (f *fixture) run(functionName string) {
+	f.runController(functionName, true, false)
 }
 
-func (f *fixture) runExpectError(fooName string) {
-	f.runController(fooName, true, true)
+func (f *fixture) runExpectError(functionName string) {
+	f.runController(functionName, true, true)
 }
 
-func (f *fixture) runController(fooName string, startInformers bool, expectError bool) {
+func (f *fixture) runController(functionName string, startInformers bool, expectError bool) {
 	c, i, k8sI := f.newController()
 	if startInformers {
 		stopCh := make(chan struct{})
@@ -123,11 +123,11 @@ func (f *fixture) runController(fooName string, startInformers bool, expectError
 		k8sI.Start(stopCh)
 	}
 
-	err := c.syncHandler(fooName)
+	err := c.syncHandler(functionName)
 	if !expectError && err != nil {
-		f.t.Errorf("error syncing foo: %v", err)
+		f.t.Errorf("error syncing function: %v", err)
 	} else if expectError && err == nil {
-		f.t.Error("expected error syncing foo, got nil")
+		f.t.Error("expected error syncing function, got nil")
 	}
 
 	actions := filterInformerActions(f.client.Actions())
@@ -215,8 +215,8 @@ func filterInformerActions(actions []core.Action) []core.Action {
 	ret := []core.Action{}
 	for _, action := range actions {
 		if len(action.GetNamespace()) == 0 &&
-			(action.Matches("list", "foos") ||
-				action.Matches("watch", "foos") ||
+			(action.Matches("list", "functions") ||
+				action.Matches("watch", "functions") ||
 				action.Matches("list", "deployments") ||
 				action.Matches("watch", "deployments")) {
 			continue
@@ -235,17 +235,17 @@ func (f *fixture) expectUpdateDeploymentAction(d *apps.Deployment) {
 	f.kubeactions = append(f.kubeactions, core.NewUpdateAction(schema.GroupVersionResource{Resource: "deployments"}, d.Namespace, d))
 }
 
-func (f *fixture) expectUpdateFooStatusAction(foo *samplecontroller.Foo) {
-	action := core.NewUpdateAction(schema.GroupVersionResource{Resource: "foos"}, foo.Namespace, foo)
+func (f *fixture) expectUpdateFunctionStatusAction(function *samplecontroller.Function) {
+	action := core.NewUpdateAction(schema.GroupVersionResource{Resource: "functions"}, function.Namespace, function)
 	// TODO: Until #38113 is merged, we can't use Subresource
 	//action.Subresource = "status"
 	f.actions = append(f.actions, action)
 }
 
-func getKey(foo *samplecontroller.Foo, t *testing.T) string {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(foo)
+func getKey(function *samplecontroller.Function, t *testing.T) string {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(function)
 	if err != nil {
-		t.Errorf("Unexpected error getting key for foo %v: %v", foo.Name, err)
+		t.Errorf("Unexpected error getting key for function %v: %v", function.Name, err)
 		return ""
 	}
 	return key
@@ -253,64 +253,64 @@ func getKey(foo *samplecontroller.Foo, t *testing.T) string {
 
 func TestCreatesDeployment(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
+	function := newFunction("test", int32Ptr(1))
 
-	f.fooLister = append(f.fooLister, foo)
-	f.objects = append(f.objects, foo)
+	f.functionLister = append(f.functionLister, function)
+	f.objects = append(f.objects, function)
 
-	expDeployment := newDeployment(foo)
+	expDeployment := newDeployment(function)
 	f.expectCreateDeploymentAction(expDeployment)
-	f.expectUpdateFooStatusAction(foo)
+	f.expectUpdateFunctionStatusAction(function)
 
-	f.run(getKey(foo, t))
+	f.run(getKey(function, t))
 }
 
 func TestDoNothing(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
+	function := newFunction("test", int32Ptr(1))
+	d := newDeployment(function)
 
-	f.fooLister = append(f.fooLister, foo)
-	f.objects = append(f.objects, foo)
+	f.functionLister = append(f.functionLister, function)
+	f.objects = append(f.objects, function)
 	f.deploymentLister = append(f.deploymentLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
-	f.expectUpdateFooStatusAction(foo)
-	f.run(getKey(foo, t))
+	f.expectUpdateFunctionStatusAction(function)
+	f.run(getKey(function, t))
 }
 
 func TestUpdateDeployment(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
+	function := newFunction("test", int32Ptr(1))
+	d := newDeployment(function)
 
 	// Update replicas
-	foo.Spec.Replicas = int32Ptr(2)
-	expDeployment := newDeployment(foo)
+	function.Spec.Replicas = int32Ptr(2)
+	expDeployment := newDeployment(function)
 
-	f.fooLister = append(f.fooLister, foo)
-	f.objects = append(f.objects, foo)
+	f.functionLister = append(f.functionLister, function)
+	f.objects = append(f.objects, function)
 	f.deploymentLister = append(f.deploymentLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
-	f.expectUpdateFooStatusAction(foo)
+	f.expectUpdateFunctionStatusAction(function)
 	f.expectUpdateDeploymentAction(expDeployment)
-	f.run(getKey(foo, t))
+	f.run(getKey(function, t))
 }
 
 func TestNotControlledByUs(t *testing.T) {
 	f := newFixture(t)
-	foo := newFoo("test", int32Ptr(1))
-	d := newDeployment(foo)
+	function := newFunction("test", int32Ptr(1))
+	d := newDeployment(function)
 
 	d.ObjectMeta.OwnerReferences = []metav1.OwnerReference{}
 
-	f.fooLister = append(f.fooLister, foo)
-	f.objects = append(f.objects, foo)
+	f.functionLister = append(f.functionLister, function)
+	f.objects = append(f.objects, function)
 	f.deploymentLister = append(f.deploymentLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
-	f.runExpectError(getKey(foo, t))
+	f.runExpectError(getKey(function, t))
 }
 
 func int32Ptr(i int32) *int32 { return &i }

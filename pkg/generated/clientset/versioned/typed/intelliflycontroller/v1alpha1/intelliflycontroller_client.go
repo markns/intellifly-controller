@@ -26,7 +26,7 @@ import (
 
 type IntelliflyV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	FoosGetter
+	FunctionsGetter
 }
 
 // IntelliflyV1alpha1Client is used to interact with features provided by the intellifly.io group.
@@ -34,8 +34,8 @@ type IntelliflyV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *IntelliflyV1alpha1Client) Foos(namespace string) FooInterface {
-	return newFoos(c, namespace)
+func (c *IntelliflyV1alpha1Client) Functions(namespace string) FunctionInterface {
+	return newFunctions(c, namespace)
 }
 
 // NewForConfig creates a new IntelliflyV1alpha1Client for the given config.

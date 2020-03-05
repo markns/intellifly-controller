@@ -1,13 +1,24 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: foos.intellifly.io
+  name: functions.intellifly.io
 spec:
   group: intellifly.io
   version: v1alpha1
   names:
-    kind: Foo
-    plural: foos
+    kind: Function
+    plural: functions
   scope: Namespaced
+  # https://github.com/kubernetes/sample-controller#subresources
   subresources:
     status: {}
+  # https://github.com/kubernetes/sample-controller#validation
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 10

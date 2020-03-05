@@ -1,0 +1,7 @@
+apiVersion: intellifly.io/v1alpha1
+kind: Function
+metadata:
+  name: example-function
+spec:
+  deploymentName: example-function
+  replicas: 1
