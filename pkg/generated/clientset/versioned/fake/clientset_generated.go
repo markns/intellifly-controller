@@ -19,10 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "markns/intellifly-controller/pkg/generated/clientset/versioned"
-	samplecontrollerv1alpha1 "markns/intellifly-controller/pkg/generated/clientset/versioned/typed/samplecontroller/v1alpha1"
-	fakesamplecontrollerv1alpha1 "markns/intellifly-controller/pkg/generated/clientset/versioned/typed/samplecontroller/v1alpha1/fake"
-
+	clientset "github.com/markns/intellifly-controller/pkg/generated/clientset/versioned"
+	intelliflyv1alpha1 "github.com/markns/intellifly-controller/pkg/generated/clientset/versioned/typed/intelliflycontroller/v1alpha1"
+	fakeintelliflyv1alpha1 "github.com/markns/intellifly-controller/pkg/generated/clientset/versioned/typed/intelliflycontroller/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -77,7 +76,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// SamplecontrollerV1alpha1 retrieves the SamplecontrollerV1alpha1Client
-func (c *Clientset) SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
-	return &fakesamplecontrollerv1alpha1.FakeSamplecontrollerV1alpha1{Fake: &c.Fake}
+// IntelliflyV1alpha1 retrieves the IntelliflyV1alpha1Client
+func (c *Clientset) IntelliflyV1alpha1() intelliflyv1alpha1.IntelliflyV1alpha1Interface {
+	return &fakeintelliflyv1alpha1.FakeIntelliflyV1alpha1{Fake: &c.Fake}
 }

@@ -19,13 +19,13 @@ limitations under the License.
 package externalversions
 
 import (
-	versioned "markns/intellifly-controller/pkg/generated/clientset/versioned"
-	internalinterfaces "markns/intellifly-controller/pkg/generated/informers/externalversions/internalinterfaces"
-	samplecontroller "markns/intellifly-controller/pkg/generated/informers/externalversions/samplecontroller"
 	reflect "reflect"
 	sync "sync"
 	time "time"
 
+	versioned "github.com/markns/intellifly-controller/pkg/generated/clientset/versioned"
+	intelliflycontroller "github.com/markns/intellifly-controller/pkg/generated/informers/externalversions/intelliflycontroller"
+	internalinterfaces "github.com/markns/intellifly-controller/pkg/generated/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Samplecontroller() samplecontroller.Interface
+	Intellifly() intelliflycontroller.Interface
 }
 
-func (f *sharedInformerFactory) Samplecontroller() samplecontroller.Interface {
-	return samplecontroller.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Intellifly() intelliflycontroller.Interface {
+	return intelliflycontroller.New(f, f.namespace, f.tweakListOptions)
 }

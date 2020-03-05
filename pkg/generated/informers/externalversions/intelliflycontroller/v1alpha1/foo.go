@@ -19,12 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	samplecontrollerv1alpha1 "markns/intellifly-controller/pkg/apis/samplecontroller/v1alpha1"
-	versioned "markns/intellifly-controller/pkg/generated/clientset/versioned"
-	internalinterfaces "markns/intellifly-controller/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "markns/intellifly-controller/pkg/generated/listers/samplecontroller/v1alpha1"
+	"context"
 	time "time"
 
+	intelliflycontrollerv1alpha1 "github.com/markns/intellifly-controller/pkg/apis/intelliflycontroller/v1alpha1"
+	versioned "github.com/markns/intellifly-controller/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/markns/intellifly-controller/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/markns/intellifly-controller/pkg/generated/listers/intelliflycontroller/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -61,16 +62,16 @@ func NewFilteredFooInformer(client versioned.Interface, namespace string, resync
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SamplecontrollerV1alpha1().Foos(namespace).List(options)
+				return client.IntelliflyV1alpha1().Foos(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SamplecontrollerV1alpha1().Foos(namespace).Watch(options)
+				return client.IntelliflyV1alpha1().Foos(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&samplecontrollerv1alpha1.Foo{},
+		&intelliflycontrollerv1alpha1.Foo{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +82,7 @@ func (f *fooInformer) defaultInformer(client versioned.Interface, resyncPeriod t
 }
 
 func (f *fooInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&samplecontrollerv1alpha1.Foo{}, f.defaultInformer)
+	return f.factory.InformerFor(&intelliflycontrollerv1alpha1.Foo{}, f.defaultInformer)
 }
 
 func (f *fooInformer) Lister() v1alpha1.FooLister {
